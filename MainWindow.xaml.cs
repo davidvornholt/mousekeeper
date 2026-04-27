@@ -244,7 +244,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         {
             var elapsed = _activeSince.HasValue ? DateTimeOffset.Now - _activeSince.Value : TimeSpan.Zero;
             HeroText = FormatElapsed(elapsed);
-            HeroSubtext = "Sanfte Bewegung läuft";
+            HeroSubtext = "Maus wird bewegt";
             ToggleButtonText = "Stoppen";
             ToggleGlyph = "\uE71A"; // Stop
             color = Color.FromArgb(255, 76, 187, 113);
@@ -255,7 +255,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
             var remaining = _idleDelay - idleFor;
             if (remaining < TimeSpan.Zero) remaining = TimeSpan.Zero;
             HeroText = $"{remaining.TotalSeconds:0.0}s";
-            HeroSubtext = "Wartet auf Mausruhe";
+            HeroSubtext = "Warten auf Inaktivität";
             ToggleButtonText = "Stoppen";
             ToggleGlyph = "\uE71A";
             var accent = (Color)Application.Current.Resources["SystemAccentColor"];
