@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "MouseKeeper (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "MouseKeeper (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

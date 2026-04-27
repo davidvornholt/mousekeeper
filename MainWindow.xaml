@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="MouseKeeper.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Title="MouseKeeper">
+
+    <Window.SystemBackdrop>
+        <MicaBackdrop />
+    </Window.SystemBackdrop>
+
+    <Grid
+        Padding="28"
+        Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Spacing="6">
+            <TextBlock
+                Text="MouseKeeper"
+                FontSize="30"
+                FontWeight="SemiBold" />
+            <TextBlock
+                Text="Halt den Mauszeiger dezent in Bewegung, wenn du ihn gerade nicht benutzt."
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                TextWrapping="Wrap" />
+        </StackPanel>
+
+        <Grid
+            Grid.Row="1"
+            Margin="0,28,0,24"
+            RowSpacing="16">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <Border
+                Padding="22"
+                CornerRadius="8"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1">
+                <Grid ColumnSpacing="18">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border
+                        Width="14"
+                        Height="14"
+                        CornerRadius="7"
+                        VerticalAlignment="Top"
+                        Margin="0,7,0,0"
+                        Background="{x:Bind StatusBrush, Mode=OneWay}" />
+
+                    <StackPanel Grid.Column="1" Spacing="4">
+                        <TextBlock
+                            Text="{x:Bind StatusTitle, Mode=OneWay}"
+                            FontSize="20"
+                            FontWeight="SemiBold" />
+                        <TextBlock
+                            Text="{x:Bind StatusDescription, Mode=OneWay}"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <Button
+                x:Name="ToggleButton"
+                Grid.Row="1"
+                MinHeight="52"
+                HorizontalAlignment="Stretch"
+                Click="ToggleButton_Click"
+                Style="{StaticResource AccentButtonStyle}">
+                <TextBlock
+                    Text="{x:Bind ToggleButtonText, Mode=OneWay}"
+                    FontSize="16"
+                    FontWeight="SemiBold" />
+            </Button>
+
+            <Border
+                Grid.Row="2"
+                Padding="18"
+                CornerRadius="8"
+                Background="{ThemeResource AccentFillColorTertiaryBrush}"
+                BorderBrush="{ThemeResource AccentFillColorSecondaryBrush}"
+                BorderThickness="1">
+                <Grid ColumnSpacing="16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Spacing="4">
+                        <TextBlock
+                            Text="Kurzbefehl zum Ein- und Ausschalten"
+                            FontWeight="SemiBold" />
+                        <TextBlock
+                            Text="Funktioniert auch, wenn MouseKeeper im Hintergrund ist."
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+
+                    <Border
+                        Grid.Column="1"
+                        MinWidth="156"
+                        Padding="14,10"
+                        CornerRadius="6"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1">
+                        <TextBlock
+                            Text="{x:Bind ShortcutText, Mode=OneWay}"
+                            FontSize="22"
+                            FontWeight="SemiBold"
+                            TextAlignment="Center" />
+                    </Border>
+                </Grid>
+            </Border>
+
+            <Grid
+                Grid.Row="3"
+                ColumnSpacing="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Border
+                    Padding="16"
+                    CornerRadius="8"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1">
+                    <StackPanel Spacing="8">
+                        <TextBlock
+                            Text="Start nach Ruhe"
+                            FontWeight="SemiBold" />
+                        <TextBlock
+                            Text="{x:Bind IdleProgressText, Mode=OneWay}"
+                            FontSize="18"
+                            FontWeight="SemiBold" />
+                        <ProgressBar
+                            Minimum="0"
+                            Maximum="100"
+                            Value="{x:Bind IdleProgress, Mode=OneWay}" />
+                    </StackPanel>
+                </Border>
+
+                <Border
+                    Grid.Column="1"
+                    Padding="16"
+                    CornerRadius="8"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1">
+                    <StackPanel Spacing="4">
+                        <TextBlock
+                            Text="Wartezeit"
+                            FontWeight="SemiBold" />
+                        <TextBlock
+                            Text="3 Sekunden"
+                            FontSize="18"
+                            FontWeight="SemiBold" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Grid>
+
+        <TextBlock
+            Grid.Row="2"
+            Text="Sobald du die Maus bewegst, pausiert MouseKeeper automatisch."
+            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+            TextWrapping="Wrap" />
+    </Grid>
+</Window>
