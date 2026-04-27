@@ -84,6 +84,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     {
         var windowId = Win32Interop.GetWindowIdFromWindow(_windowHandle);
         var appWindow = AppWindow.GetFromWindowId(windowId);
+        appWindow.SetIcon(System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "AppIcon.ico"));
         appWindow.Resize(new SizeInt32(460, 600));
 
         if (appWindow.Presenter is OverlappedPresenter presenter)

@@ -55,11 +55,10 @@
                 <Border
                     Width="32" Height="32"
                     CornerRadius="16"
-                    Background="{ThemeResource AccentFillColorDefaultBrush}">
-                    <FontIcon
-                        Glyph="&#xE962;"
-                        FontSize="14"
-                        Foreground="White" />
+                    Background="Transparent">
+                    <Image
+                        Source="ms-appx:///Assets/AppIcon.png"
+                        Stretch="UniformToFill" />
                 </Border>
                 <TextBlock
                     Text="MouseKeeper"

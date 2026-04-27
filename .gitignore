@@ -9,6 +9,7 @@ obj/
 # Build and publish output
 artifacts/
 publish/
+AppPackages/
 TestResults/
 
 # IDE/editor files
