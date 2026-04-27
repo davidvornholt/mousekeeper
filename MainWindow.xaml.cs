@@ -1,11 +1,16 @@
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Shapes;
 using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
+using Windows.Foundation;
 using Windows.Graphics;
+using Windows.UI;
+using Windows.Storage;
 using WinRT.Interop;
 
 namespace MouseKeeper;
@@ -26,7 +31,8 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     private const int LlmhfInjected = 0x00000001;
     private const int MouseEventFMove = 0x0001;
 
-    private static readonly TimeSpan IdleDelay = TimeSpan.FromSeconds(3);
+    private const string DelaySettingKey = "IdleDelaySeconds";
+    private static readonly int[] DelayChoices = { 3, 10, 30, 60 };
     private static readonly TimeSpan FrameInterval = TimeSpan.FromMilliseconds(32);
 
     private readonly DispatcherTimer _timer;
@@ -35,6 +41,8 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     private readonly LowLevelMouseProc _mouseProc;
     private IntPtr _hookHandle;
     private DateTimeOffset _lastRealMouseInput = DateTimeOffset.Now;
+    private DateTimeOffset? _activeSince;
+    private TimeSpan _idleDelay = TimeSpan.FromSeconds(3);
     private bool _hotkeyRegistered;
     private bool _isEnabled;
     private bool _isMoving;
@@ -50,47 +58,113 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         _subclassProc = WindowSubclassProc;
         _mouseProc = MouseHookProc;
 
-        ResizeWindow();
+        ConfigureWindow();
         RegisterBestAvailableHotkey();
         SetWindowSubclass(_windowHandle, _subclassProc, 1, IntPtr.Zero);
         _hookHandle = SetWindowsHookEx(WhMouseLl, _mouseProc, GetModuleHandle(null), 0);
+
+        _idleDelay = TimeSpan.FromSeconds(LoadSavedDelay());
+        SyncDelaySelector();
 
         _timer = new DispatcherTimer { Interval = FrameInterval };
         _timer.Tick += Timer_Tick;
         _timer.Start();
 
         Closed += MainWindow_Closed;
-        RefreshStatus();
+        RefreshAll();
     }
 
-    public string StatusTitle { get; private set; } = string.Empty;
-
-    public string StatusDescription { get; private set; } = string.Empty;
-
+    public string StatusBadge { get; private set; } = string.Empty;
+    public string HeroText { get; private set; } = string.Empty;
+    public string HeroSubtext { get; private set; } = string.Empty;
     public string ToggleButtonText { get; private set; } = string.Empty;
-
+    public string ToggleGlyph { get; private set; } = "\uE768";
     public string ShortcutText { get; private set; } = string.Empty;
+    public Brush StatusBrush { get; private set; } = new SolidColorBrush(Color.FromArgb(255, 140, 140, 140));
 
-    public double IdleProgress { get; private set; }
-
-    public string IdleProgressText { get; private set; } = string.Empty;
-
-    public Brush StatusBrush { get; private set; } = new SolidColorBrush(Colors.Gray);
-
-    private void ResizeWindow()
+    private void ConfigureWindow()
     {
         var windowId = Win32Interop.GetWindowIdFromWindow(_windowHandle);
         var appWindow = AppWindow.GetFromWindowId(windowId);
-        appWindow.Resize(new SizeInt32(520, 560));
+        appWindow.Resize(new SizeInt32(460, 660));
+
+        if (appWindow.Presenter is OverlappedPresenter presenter)
+        {
+            presenter.IsResizable = false;
+            presenter.IsMaximizable = false;
+        }
+
+        if (AppWindowTitleBar.IsCustomizationSupported())
+        {
+            appWindow.TitleBar.ExtendsContentIntoTitleBar = true;
+            appWindow.TitleBar.PreferredHeightOption = TitleBarHeightOption.Tall;
+            appWindow.TitleBar.ButtonBackgroundColor = Colors.Transparent;
+            appWindow.TitleBar.ButtonInactiveBackgroundColor = Colors.Transparent;
+        }
+    }
+
+    private int LoadSavedDelay()
+    {
+        try
+        {
+            var settings = ApplicationData.Current.LocalSettings;
+            if (settings.Values.TryGetValue(DelaySettingKey, out var value) && value is int seconds && Array.IndexOf(DelayChoices, seconds) >= 0)
+            {
+                return seconds;
+            }
+        }
+        catch
+        {
+            // unpackaged or unavailable — fall back to default
+        }
+        return 3;
+    }
+
+    private void SaveDelay(int seconds)
+    {
+        try
+        {
+            ApplicationData.Current.LocalSettings.Values[DelaySettingKey] = seconds;
+        }
+        catch
+        {
+            // ignore — no persistence available
+        }
+    }
+
+    private void SyncDelaySelector()
+    {
+        var seconds = (int)_idleDelay.TotalSeconds;
+        for (var i = 0; i < DelaySelector.Items.Count; i++)
+        {
+            if (DelaySelector.Items[i] is SelectorBarItem item && item.Tag is string tag && int.TryParse(tag, out var s) && s == seconds)
+            {
+                DelaySelector.SelectedItem = item;
+                return;
+            }
+        }
+        DelaySelector.SelectedItem = DelaySelector.Items[0];
+    }
+
+    private void DelaySelector_SelectionChanged(SelectorBar sender, SelectorBarSelectionChangedEventArgs args)
+    {
+        if (sender.SelectedItem is SelectorBarItem item && item.Tag is string tag && int.TryParse(tag, out var seconds))
+        {
+            if (seconds == (int)_idleDelay.TotalSeconds) return;
+            _idleDelay = TimeSpan.FromSeconds(seconds);
+            SaveDelay(seconds);
+            _lastRealMouseInput = DateTimeOffset.Now;
+            RefreshAll();
+        }
     }
 
     private void RegisterBestAvailableHotkey()
     {
         var candidates = new[]
         {
-            (Modifiers: ModifierControlAlt, Key: KeyM, Text: "Strg + Alt + M"),
-            (Modifiers: ModifierControlShift, Key: KeyM, Text: "Strg + Shift + M"),
-            (Modifiers: ModifierControlAlt, Key: KeyK, Text: "Strg + Alt + K"),
+            (Modifiers: ModifierControlAlt, Key: KeyM, Text: "Ctrl + Alt + M"),
+            (Modifiers: ModifierControlShift, Key: KeyM, Text: "Ctrl + Shift + M"),
+            (Modifiers: ModifierControlAlt, Key: KeyK, Text: "Ctrl + Alt + K"),
             (Modifiers: ModifierAltShift, Key: KeyM, Text: "Alt + Shift + M")
         };
 
@@ -105,45 +179,52 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         }
 
         _hotkeyRegistered = false;
-        ShortcutText = "Kein Kurzbefehl frei";
+        ShortcutText = "Kein Kurzbefehl";
     }
 
-    private void ToggleButton_Click(object sender, RoutedEventArgs e)
-    {
-        ToggleKeeper();
-    }
+    private void ToggleButton_Click(object sender, RoutedEventArgs e) => ToggleKeeper();
 
     private void ToggleKeeper()
     {
         _isEnabled = !_isEnabled;
         _isMoving = false;
+        _activeSince = null;
         _lastRealMouseInput = DateTimeOffset.Now;
-        UpdateIdleProgress(TimeSpan.Zero);
-        RefreshStatus();
+        RefreshAll();
     }
 
     private void Timer_Tick(object? sender, object e)
     {
         if (!_isEnabled)
         {
-            UpdateIdleProgress(TimeSpan.Zero);
+            RefreshAll();
             return;
         }
 
         var idleFor = DateTimeOffset.Now - _lastRealMouseInput;
-        var shouldMove = idleFor >= IdleDelay;
-        UpdateIdleProgress(idleFor);
+        var shouldMove = idleFor >= _idleDelay;
 
         if (_isMoving != shouldMove)
         {
             _isMoving = shouldMove;
-            RefreshStatus();
+            if (_isMoving)
+            {
+                _activeSince = DateTimeOffset.Now;
+                PulseStoryboard.Begin();
+            }
+            else
+            {
+                _activeSince = null;
+                PulseStoryboard.Stop();
+            }
         }
 
         if (_isMoving)
         {
             MoveMouseGently();
         }
+
+        RefreshAll(idleFor);
     }
 
     private void MoveMouseGently()
@@ -167,35 +248,119 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         }, Marshal.SizeOf<INPUT>());
     }
 
-    private void RefreshStatus()
-    {
-        StatusTitle = _isEnabled ? (_isMoving ? "Aktiv" : "Bereit") : "Ausgeschaltet";
-        StatusDescription = _isEnabled
-            ? (_isMoving
-                ? "MouseKeeper bewegt den Zeiger sanft. Deine eigene Mausbewegung hat jederzeit Vorrang."
-                : "Warte auf Mausruhe. Nach 3 Sekunden übernimmt MouseKeeper ganz dezent.")
-            : _hotkeyRegistered
-                ? $"Drücke den Button oder {ShortcutText}, um die Mausbewegung zu starten."
-                : "Drücke den Button, um die Mausbewegung zu starten. Alle Kurzbefehl-Varianten sind gerade belegt.";
-        ToggleButtonText = _isEnabled ? "MouseKeeper stoppen" : "MouseKeeper starten";
-        StatusBrush = new SolidColorBrush(_isEnabled ? (_isMoving ? Colors.LimeGreen : Colors.Goldenrod) : Colors.Gray);
+    private void RefreshAll() => RefreshAll(DateTimeOffset.Now - _lastRealMouseInput);
 
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(StatusTitle)));
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(StatusDescription)));
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ToggleButtonText)));
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ShortcutText)));
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(StatusBrush)));
+    private void RefreshAll(TimeSpan idleFor)
+    {
+        double progress;
+        Color color;
+
+        if (!_isEnabled)
+        {
+            StatusBadge = "Aus";
+            HeroText = "Aus";
+            HeroSubtext = _hotkeyRegistered
+                ? $"Drücke Start oder {ShortcutText}"
+                : "Drücke Start, um zu beginnen";
+            ToggleButtonText = "Starten";
+            ToggleGlyph = "\uE768"; // Play
+            color = Color.FromArgb(255, 140, 140, 140);
+            progress = 0;
+        }
+        else if (_isMoving)
+        {
+            var elapsed = _activeSince.HasValue ? DateTimeOffset.Now - _activeSince.Value : TimeSpan.Zero;
+            StatusBadge = "Aktiv";
+            HeroText = FormatElapsed(elapsed);
+            HeroSubtext = "Sanfte Bewegung läuft";
+            ToggleButtonText = "Stoppen";
+            ToggleGlyph = "\uE71A"; // Stop
+            color = Color.FromArgb(255, 76, 187, 113);
+            progress = 1.0;
+        }
+        else
+        {
+            var remaining = _idleDelay - idleFor;
+            if (remaining < TimeSpan.Zero) remaining = TimeSpan.Zero;
+            StatusBadge = "Wartet";
+            HeroText = $"{remaining.TotalSeconds:0.0}s";
+            HeroSubtext = "Wartet auf Mausruhe";
+            ToggleButtonText = "Stoppen";
+            ToggleGlyph = "\uE71A";
+            var accent = (Color)Application.Current.Resources["SystemAccentColor"];
+            color = accent;
+            progress = Math.Clamp(idleFor.TotalMilliseconds / _idleDelay.TotalMilliseconds, 0, 1);
+        }
+
+        StatusBrush = new SolidColorBrush(color);
+        UpdateArc(progress);
+
+        Notify(nameof(StatusBadge));
+        Notify(nameof(StatusBrush));
+        Notify(nameof(HeroText));
+        Notify(nameof(HeroSubtext));
+        Notify(nameof(ToggleButtonText));
+        Notify(nameof(ToggleGlyph));
+        Notify(nameof(ShortcutText));
     }
 
-    private void UpdateIdleProgress(TimeSpan idleFor)
+    private static string FormatElapsed(TimeSpan t)
     {
-        IdleProgress = _isEnabled ? Math.Clamp(idleFor.TotalMilliseconds / IdleDelay.TotalMilliseconds * 100, 0, 100) : 0;
-        var remainingSeconds = Math.Max(0, IdleDelay.TotalSeconds - idleFor.TotalSeconds);
-        IdleProgressText = _isMoving ? "Läuft jetzt" : _isEnabled ? $"{remainingSeconds:0.0} s" : "Pausiert";
-
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IdleProgress)));
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IdleProgressText)));
+        if (t.TotalHours >= 1)
+            return $"{(int)t.TotalHours}:{t.Minutes:00}:{t.Seconds:00}";
+        return $"{t.Minutes}:{t.Seconds:00}";
     }
+
+    private void UpdateArc(double progress)
+    {
+        progress = Math.Clamp(progress, 0, 1);
+        if (progress <= 0.001)
+        {
+            ProgressArc.Data = null;
+            return;
+        }
+
+        const double radius = 116.0;
+        var center = new Point(124, 124);
+
+        if (progress >= 0.999)
+        {
+            ProgressArc.Data = new EllipseGeometry { Center = center, RadiusX = radius, RadiusY = radius };
+            return;
+        }
+
+        const double startAngle = -Math.PI / 2;
+        var sweep = progress * 2 * Math.PI;
+        var endAngle = startAngle + sweep;
+
+        var startPt = new Point(
+            center.X + radius * Math.Cos(startAngle),
+            center.Y + radius * Math.Sin(startAngle));
+        var endPt = new Point(
+            center.X + radius * Math.Cos(endAngle),
+            center.Y + radius * Math.Sin(endAngle));
+
+        var figure = new Microsoft.UI.Xaml.Media.PathFigure
+        {
+            StartPoint = startPt,
+            IsClosed = false
+        };
+        figure.Segments.Add(new Microsoft.UI.Xaml.Media.ArcSegment
+        {
+            Point = endPt,
+            Size = new Size(radius, radius),
+            IsLargeArc = sweep > Math.PI,
+            SweepDirection = SweepDirection.Clockwise,
+            RotationAngle = 0
+        });
+
+        var geo = new Microsoft.UI.Xaml.Media.PathGeometry();
+        geo.Figures.Add(figure);
+        ProgressArc.Data = geo;
+    }
+
+    private void Notify(string name) =>
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
     private IntPtr WindowSubclassProc(IntPtr hWnd, uint message, IntPtr wParam, IntPtr lParam, UIntPtr subclassId, IntPtr refData)
     {
@@ -204,7 +369,6 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
             ToggleKeeper();
             return IntPtr.Zero;
         }
-
         return DefSubclassProc(hWnd, message, wParam, lParam);
     }
 
@@ -218,19 +382,18 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
                 _lastRealMouseInput = DateTimeOffset.Now;
             }
         }
-
         return CallNextHookEx(_hookHandle, code, wParam, lParam);
     }
 
     private void MainWindow_Closed(object sender, WindowEventArgs args)
     {
         _timer.Stop();
+        PulseStoryboard.Stop();
         if (_hotkeyRegistered)
         {
             UnregisterHotKey(_windowHandle, HotkeyId);
         }
         RemoveWindowSubclass(_windowHandle, _subclassProc, 1);
-
         if (_hookHandle != IntPtr.Zero)
         {
             UnhookWindowsHookEx(_hookHandle);
@@ -239,15 +402,10 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     }
 
     private delegate IntPtr LowLevelMouseProc(int code, IntPtr wParam, IntPtr lParam);
-
     private delegate IntPtr SUBCLASSPROC(IntPtr hWnd, uint message, IntPtr wParam, IntPtr lParam, UIntPtr subclassId, IntPtr refData);
 
     [StructLayout(LayoutKind.Sequential)]
-    private struct POINT
-    {
-        public int x;
-        public int y;
-    }
+    private struct POINT { public int x; public int y; }
 
     [StructLayout(LayoutKind.Sequential)]
     private struct MSLLHOOKSTRUCT
@@ -260,11 +418,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    private struct INPUT
-    {
-        public int type;
-        public MOUSEINPUT mi;
-    }
+    private struct INPUT { public int type; public MOUSEINPUT mi; }
 
     [StructLayout(LayoutKind.Sequential)]
     private struct MOUSEINPUT
