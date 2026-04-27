@@ -122,8 +122,7 @@
                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                         HorizontalAlignment="Center"
                         TextAlignment="Center"
-                        TextWrapping="Wrap"
-                        MaxWidth="180" />
+                        TextWrapping="Wrap" />
                 </StackPanel>
             </Grid>
         </Grid>

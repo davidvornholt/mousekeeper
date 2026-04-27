@@ -233,7 +233,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         {
             HeroText = "Aus";
             HeroSubtext = _hotkeyRegistered
-                ? $"Drücke Start oder {ShortcutText}"
+                ? $"Drücke Start oder\n{ShortcutText}"
                 : "Drücke Start, um zu beginnen";
             ToggleButtonText = "Starten";
             ToggleGlyph = "\uE768"; // Play
