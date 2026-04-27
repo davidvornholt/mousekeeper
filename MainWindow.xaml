@@ -138,44 +138,26 @@
             Click="ToggleButton_Click"
             Style="{StaticResource AccentButtonStyle}"
             ToolTipService.ToolTip="Globaler Kurzbefehl zum Umschalten">
-            <Grid HorizontalAlignment="Stretch">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <!-- Invisible mirror keeps the label optically centered -->
+            <StackPanel
+                Orientation="Horizontal"
+                Spacing="10"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center">
+                <FontIcon
+                    Glyph="{x:Bind ToggleGlyph, Mode=OneWay}"
+                    FontSize="14" />
                 <TextBlock
-                    Grid.Column="0"
+                    Text="{x:Bind ToggleButtonText, Mode=OneWay}"
+                    FontSize="15"
+                    FontWeight="SemiBold" />
+                <TextBlock
+                    VerticalAlignment="Center"
                     Margin="14,0,0,0"
                     Text="{x:Bind ShortcutText, Mode=OneWay}"
                     FontSize="11"
                     FontWeight="SemiBold"
-                    Opacity="0"
-                    IsHitTestVisible="False" />
-                <StackPanel
-                    Grid.Column="1"
-                    Orientation="Horizontal"
-                    Spacing="10"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center">
-                    <FontIcon
-                        Glyph="{x:Bind ToggleGlyph, Mode=OneWay}"
-                        FontSize="14" />
-                    <TextBlock
-                        Text="{x:Bind ToggleButtonText, Mode=OneWay}"
-                        FontSize="15"
-                        FontWeight="SemiBold" />
-                </StackPanel>
-                <TextBlock
-                    Grid.Column="2"
-                    VerticalAlignment="Center"
-                    Margin="8,0,14,0"
-                    Text="{x:Bind ShortcutText, Mode=OneWay}"
-                    FontSize="11"
-                    FontWeight="SemiBold"
                     Opacity="0.65" />
-            </Grid>
+            </StackPanel>
         </Button>
 
         <!-- Footer: hint -->
