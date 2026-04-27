@@ -128,7 +128,7 @@
             </Grid>
         </Grid>
 
-        <!-- Toggle -->
+        <!-- Toggle with embedded shortcut hint -->
         <Button
             x:Name="ToggleButton"
             Grid.Row="2"
@@ -136,51 +136,41 @@
             HorizontalAlignment="Stretch"
             CornerRadius="26"
             Click="ToggleButton_Click"
-            Style="{StaticResource AccentButtonStyle}">
-            <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                <FontIcon
-                    Glyph="{x:Bind ToggleGlyph, Mode=OneWay}"
-                    FontSize="14" />
-                <TextBlock
-                    Text="{x:Bind ToggleButtonText, Mode=OneWay}"
-                    FontSize="15"
-                    FontWeight="SemiBold" />
-            </StackPanel>
-        </Button>
-
-        <!-- Footer: shortcut chip + hint -->
-        <Grid Grid.Row="3" Margin="0,18,0,0" ColumnSpacing="12">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-
-            <TextBlock
-                VerticalAlignment="Center"
-                Text="Bewegst du die Maus, pausiert MouseKeeper sofort."
-                FontSize="12"
-                TextWrapping="Wrap"
-                Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
-
-            <Border
-                Grid.Column="1"
-                Padding="10,5"
-                CornerRadius="10"
-                Background="{ThemeResource SubtleFillColorSecondaryBrush}"
-                BorderBrush="{ThemeResource SubtleFillColorTertiaryBrush}"
-                BorderThickness="1"
-                ToolTipService.ToolTip="Globaler Kurzbefehl zum Umschalten">
-                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+            Style="{StaticResource AccentButtonStyle}"
+            ToolTipService.ToolTip="Globaler Kurzbefehl zum Umschalten">
+            <Grid HorizontalAlignment="Stretch">
+                <StackPanel
+                    Orientation="Horizontal"
+                    Spacing="10"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
                     <FontIcon
-                        Glyph="&#xE765;"
-                        FontSize="11"
-                        Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                        Glyph="{x:Bind ToggleGlyph, Mode=OneWay}"
+                        FontSize="14" />
                     <TextBlock
-                        Text="{x:Bind ShortcutText, Mode=OneWay}"
-                        FontSize="12"
+                        Text="{x:Bind ToggleButtonText, Mode=OneWay}"
+                        FontSize="15"
                         FontWeight="SemiBold" />
                 </StackPanel>
-            </Border>
-        </Grid>
+                <TextBlock
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    Margin="0,0,14,0"
+                    Text="{x:Bind ShortcutText, Mode=OneWay}"
+                    FontSize="11"
+                    FontWeight="SemiBold"
+                    Opacity="0.65" />
+            </Grid>
+        </Button>
+
+        <!-- Footer: hint -->
+        <TextBlock
+            Grid.Row="3"
+            Margin="0,18,0,0"
+            VerticalAlignment="Center"
+            Text="Bewegst du die Maus, pausiert MouseKeeper sofort."
+            FontSize="12"
+            TextWrapping="Wrap"
+            Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
     </Grid>
 </Window>
