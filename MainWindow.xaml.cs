@@ -29,6 +29,9 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     private const int WhMouseLl = 14;
     private const int LlmhfInjected = 0x00000001;
     private const int MouseEventFMove = 0x0001;
+    private const double MovementPhaseStep = 0.16;
+    private const double HorizontalMovementPixels = 8.25;
+    private const double VerticalMovementPixels = 5.75;
 
     private static readonly TimeSpan FrameInterval = TimeSpan.FromMilliseconds(32);
 
@@ -44,6 +47,8 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     private bool _isEnabled;
     private bool _isMoving;
     private double _phase;
+    private double _movementRemainderX;
+    private double _movementRemainderY;
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -127,6 +132,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         _isEnabled = !_isEnabled;
         _isMoving = false;
         _activeSince = null;
+        ResetMovementSmoothing();
         StopPulse();
         _lastRealMouseInput = DateTimeOffset.Now;
         RefreshAll();
@@ -155,6 +161,7 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
             else
             {
                 _activeSince = null;
+                ResetMovementSmoothing();
                 StopPulse();
             }
         }
@@ -169,9 +176,21 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
 
     private void MoveMouseGently()
     {
-        _phase += 0.16;
-        var dx = Math.Sin(_phase) * 1.15;
-        var dy = Math.Cos(_phase * 0.8) * 0.85;
+        _phase += MovementPhaseStep;
+        var dx = Math.Sin(_phase) * HorizontalMovementPixels;
+        var dy = Math.Cos(_phase * 0.8) * VerticalMovementPixels;
+        var dxWithRemainder = dx + _movementRemainderX;
+        var dyWithRemainder = dy + _movementRemainderY;
+        var roundedDx = (int)Math.Round(dxWithRemainder);
+        var roundedDy = (int)Math.Round(dyWithRemainder);
+
+        _movementRemainderX = dxWithRemainder - roundedDx;
+        _movementRemainderY = dyWithRemainder - roundedDy;
+
+        if (roundedDx == 0 && roundedDy == 0)
+        {
+            return;
+        }
 
         SendInput(1, new[]
         {
@@ -180,12 +199,18 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
                 type = 0,
                 mi = new MOUSEINPUT
                 {
-                    dx = (int)Math.Round(dx),
-                    dy = (int)Math.Round(dy),
+                    dx = roundedDx,
+                    dy = roundedDy,
                     dwFlags = MouseEventFMove
                 }
             }
         }, Marshal.SizeOf<INPUT>());
+    }
+
+    private void ResetMovementSmoothing()
+    {
+        _movementRemainderX = 0;
+        _movementRemainderY = 0;
     }
 
     private void StopPulse()
