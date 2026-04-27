@@ -10,6 +10,7 @@ obj/
 artifacts/
 publish/
 AppPackages/
+BundleArtifacts/
 TestResults/
 
 # IDE/editor files

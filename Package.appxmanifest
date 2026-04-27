@@ -8,15 +8,15 @@
   IgnorableNamespaces="uap rescap">
 
   <Identity
-    Name="7da72f07-dee7-4a83-9eaa-9e7de9cec6b6"
-    Publisher="CN=david"
+    Name="DavidVornholt.MouseKeeper"
+    Publisher="CN=299F578D-B54B-4F74-969C-761DD5D6BA53"
     Version="1.0.0.0" />
 
-  <mp:PhoneIdentity PhoneProductId="7da72f07-dee7-4a83-9eaa-9e7de9cec6b6" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
+  <mp:PhoneIdentity PhoneProductId="8ac19133-b784-44c7-99d8-a15410637dc6" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
   <Properties>
     <DisplayName>MouseKeeper</DisplayName>
-    <PublisherDisplayName>david</PublisherDisplayName>
+    <PublisherDisplayName>David Vornholt</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
 
