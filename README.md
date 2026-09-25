@@ -12,7 +12,7 @@ MouseKeeper is a small Windows app that gently moves the mouse after a short idl
 ## Requirements
 
 - Windows 10 version 1809 or newer.
-- .NET SDK 8 or newer for building from source.
+- .NET SDK 10 or newer for building from source.
 
 ## Privacy
 
