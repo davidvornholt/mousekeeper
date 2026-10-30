@@ -32,6 +32,9 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
     private const double MovementPhaseStep = 0.16;
     private const double HorizontalMovementPixels = 8.25;
     private const double VerticalMovementPixels = 5.75;
+    private const int WindowWidth = 460;
+    private const int WindowHeight = 600;
+    private const double DefaultDpi = 96.0;
 
     private static readonly TimeSpan FrameInterval = TimeSpan.FromMilliseconds(32);
 
@@ -85,7 +88,13 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         var windowId = Win32Interop.GetWindowIdFromWindow(_windowHandle);
         var appWindow = AppWindow.GetFromWindowId(windowId);
         appWindow.SetIcon(System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "AppIcon.ico"));
-        appWindow.Resize(new SizeInt32(460, 600));
+        // AppWindow sizes are physical pixels; scale so the fixed-size layout
+        // fits on displays above 100% scaling.
+        var dpi = GetDpiForWindow(_windowHandle);
+        var scale = dpi == 0 ? 1.0 : dpi / DefaultDpi;
+        appWindow.Resize(new SizeInt32(
+            (int)Math.Round(WindowWidth * scale),
+            (int)Math.Round(WindowHeight * scale)));
 
         if (appWindow.Presenter is OverlappedPresenter presenter)
         {
@@ -401,6 +410,9 @@ public sealed partial class MainWindow : Window, INotifyPropertyChanged
         public uint time;
         public IntPtr dwExtraInfo;
     }
+
+    [DllImport("user32.dll")]
+    private static extern uint GetDpiForWindow(IntPtr hwnd);
 
     [DllImport("user32.dll", SetLastError = true)]
     private static extern bool RegisterHotKey(IntPtr hWnd, int id, int fsModifiers, int vk);
