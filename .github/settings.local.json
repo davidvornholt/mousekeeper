@@ -1,0 +1,31 @@
+{
+  "repository": {},
+  "rulesets": [
+    {
+      "name": "Require the Windows build",
+      "target": "branch",
+      "enforcement": "active",
+      "conditions": {
+        "ref_name": {
+          "include": ["~DEFAULT_BRANCH"],
+          "exclude": []
+        }
+      },
+      "bypass_actors": [],
+      "rules": [
+        {
+          "type": "required_status_checks",
+          "parameters": {
+            "strict_required_status_checks_policy": true,
+            "do_not_enforce_on_create": false,
+            "required_status_checks": [
+              { "context": "build (x64, win-x64)", "integration_id": 15368 },
+              { "context": "build (x86, win-x86)", "integration_id": 15368 },
+              { "context": "build (ARM64, win-arm64)", "integration_id": 15368 }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
